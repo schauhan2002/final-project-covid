@@ -1,0 +1,7 @@
+"0","summary_table <- readRDS(""../output/summary_table.rds"")"
+"0","cols_used <- readRDS(""../output/cols_used.rds"")"
+"0","case_col <- cols_used$case_col"
+"0","death_col <- cols_used$death_col"
+"0","date_col <- cols_used$date_col"
+"0","place_col <- cols_used$place_col"
+"0","covid_analysis <- readRDS(""../output/covid_analysis.rds"")"

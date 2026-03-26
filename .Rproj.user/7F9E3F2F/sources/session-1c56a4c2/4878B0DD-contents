@@ -1,0 +1,144 @@
+---
+title: "Exploratory Analysis of COVID-19 Data"
+author: "Sakshi chauhan"
+date: "2026-02-20"
+output: html_document
+---
+
+# Introduction 
+This report examines a COVID-19 data set that include information on reported cases, deaths, and related indicators across differnt locations and time periods. The purpose of this report or data set is to better understand patterns in COVID-19 outcomes and to practice exploratory data analyzing using R. 
+
+The objective of this analysis is to: 
+1. Summarize key COVID-19 indicators using descriptive statistics. 
+2. Examine rellationships between confirmed cses and deaths using tables and visualizations. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, message = FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(janitor)
+```
+
+# Read data from a local directory
+# Put your file here: project_folder/data/covid.csv
+```{r}
+covid_raw <- read.csv("data/covid.csv")
+
+```
+
+# Clean column names (makes them lowercase with underscores)
+```{r}
+covid <- janitor::clean_names(covid_raw)
+```
+
+# Helper: find the first existing column name from a set of common options
+```{r}
+pick_col <- function(df, options){
+  options <- janitor::make_clean_names(options)
+  hit <- options[options %in% names(df)]
+  if (length(hit) == 0) return(NA_character_)
+  hit[1]
+}
+```
+
+# Common column name options across COVID datasets
+```{r}
+case_candidates  <- c("total_cases", "cases", "confirmed_cases", "confirmed", "cumulative_cases", "new_cases")
+death_candidates <- c("total_deaths", "deaths", "confirmed_deaths", "cumulative_deaths", "new_deaths")
+date_candidates  <- c("date", "report_date", "time", "day")
+place_candidates <- c("location", "country", "country_region", "state", "province_state", "region", "county")
+
+case_col  <- pick_col(covid, case_candidates)
+death_col <- pick_col(covid, death_candidates)
+date_col  <- pick_col(covid, date_candidates)
+place_col <- pick_col(covid, place_candidates)
+```
+
+# Ensure we have the needed variables for table/plot
+```{r}
+if (is.na(case_col)) {
+  stop("Couldn't find a cases column. Check covid.csv column names (e.g., total_cases, cases, confirmed_cases, new_cases).")
+}
+if (is.na(death_col)) {
+  stop("Couldn't find a deaths column. Check covid.csv column names (e.g., total_deaths, deaths, confirmed_deaths, new_deaths).")
+}
+```
+# Convert selected columns to numeric (handles character columns with commas, etc.)
+```{r}
+covid <- covid %>%
+  mutate(
+    cases_num  = suppressWarnings(as.numeric(gsub(",", "", .data[[case_col]]))),
+    deaths_num = suppressWarnings(as.numeric(gsub(",", "", .data[[death_col]])))
+  )
+```
+# Optional: if date exists, try to parse it
+```{r}
+if (!is.na(date_col)) {
+  covid <- covid %>%
+    mutate(date_parsed = suppressWarnings(as.Date(.data[[date_col]])))
+}
+```
+
+# Keep only rows with at least one of cases/deaths
+```{r}
+covid_analysis <- covid %>%
+  filter(!(is.na(cases_num) & is.na(deaths_num)))
+```
+
+# Quick summary check
+```{r}
+summary(covid_analysis$cases_num)
+summary(covid_analysis$deaths_num)
+```
+# Create summary table
+```{r}
+summary_table <- covid_analysis %>%
+  summarise(
+    Cases_Mean   = mean(cases_num, na.rm = TRUE),
+    Cases_Median = median(cases_num, na.rm = TRUE),
+    Cases_Max    = max(cases_num, na.rm = TRUE),
+    Deaths_Mean  = mean(deaths_num, na.rm = TRUE),
+    Deaths_Median= median(deaths_num, na.rm = TRUE),
+    Deaths_Max   = max(deaths_num, na.rm = TRUE),
+    N_Rows       = n()
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+summary_table %>%
+  kable(caption = "Summary statistics for COVID-19 cases and deaths") %>%
+  kable_styling(full_width = FALSE)
+```
+  
+# Table Description
+
+The table above summarizes key descriptive statistics for COVID-19 cases and deaths from the dataset. It reports the mean, median, and maximum values for the detected cases and deaths variables, along with the number of observations used. This provides a quick overview of the overall magnitude and variability of COVID-19 outcomes in the dataset.
+
+# Cases vs Deaths Relationships
+```{r}
+ggplot(covid_analysis, aes(x = cases_num, y = deaths_num)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Relationship Between COVID-19 Cases and Deaths",
+    x = paste0("COVID-19 Cases (", case_col, ")"),
+    y = paste0("COVID-19 Deaths (", death_col, ")")
+  ) +
+  theme_minimal()
+```
+  
+# Figure Description
+The scatter plot shows how COVID-19 deaths change as COVID-19 cases increase. Each point represents observation from the data set, and the overall pattern typically shows higher case counts are associated with higher death counts, reflecting greater mortality burden in observations with larger numbers of infections.
+
+# Columns Used
+```{r}
+used <- tibble(
+  element = c("Cases column", "Deaths column", "Date column", "Location column"),
+  dataset_column_used = c(case_col, death_col,ifelse(is.na(date_col), "Not found", date_col), ifelse(is.na(place_col), "Not found", place_col))
+)
+
+used %>%
+  kable(caption = "Columns detected and used from covid.csv") %>%
+  kable_styling(full_width = FALSE)
+```

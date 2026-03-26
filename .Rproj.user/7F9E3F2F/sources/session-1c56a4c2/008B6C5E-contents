@@ -1,0 +1,13 @@
+---
+title: "Analysis of Janssen COVID-19 Vaccine Shipments- March 2021"
+author: "Sakshi chauhan"
+date: "2026-02-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+## Introduction 

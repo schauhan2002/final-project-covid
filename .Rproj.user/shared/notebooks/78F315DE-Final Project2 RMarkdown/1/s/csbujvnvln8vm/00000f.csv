@@ -1,0 +1,2 @@
+"0","covid_raw <- read.csv(""../data/covid.csv"")"
+"0",""
