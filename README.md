@@ -39,3 +39,25 @@ This command will run all the scripts below and then create report/final_report.
 - displays the summary table
 - shows the scatterplot figure
 - describes the findings in text
+
+## Package environment with renv
+This project uses the renv package to manage R package versions and make the analysis reproducible.
+
+To synchronize your R packages with the versions used for this project:
+
+1. Clone this repository and open the project folder in R or RStudio. 
+2. In a terminal from the project root, run:
+
+```bash
+make install
+```
+This will install renv (if needed) and run renv::restore() to install all required packages as specified in renv.lock.
+
+From inside R we can run:
+
+```r
+install.packages("renv") # if needed
+renv::restore() # use the lockfile to install project packages
+```
+
+
